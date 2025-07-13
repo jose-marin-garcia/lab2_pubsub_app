@@ -128,26 +128,39 @@ lab2_pubsub_app/
 ├── main.py                    # Punto de entrada
 ├── requirements.txt           # Dependencias
 ├── README.md                 # Documentación
+├── .gitignore                # Archivos ignorados por Git
 ├── broker/                   # Lógica del sistema pub/sub
-│   ├── __init__.py
+│   ├── __init__.py           # Define el directorio como paquete Python
 │   └── broker.py
 ├── ui/                       # Interfaz gráfica
-│   ├── __init__.py
+│   ├── __init__.py           # Define el directorio como paquete Python
 │   └── app.py
 ├── utils/                    # Utilidades de persistencia
-│   ├── __init__.py
+│   ├── __init__.py           # Define el directorio como paquete Python
 │   └── persistence.py
-├── logs/                     # Mensajes por tópico
+├── logs/                     # Mensajes por tópico (generados automáticamente)
 │   ├── Cultura.txt
 │   ├── Deportes.txt
 │   ├── Noticias.txt
 │   └── Tecnología.txt
-└── subscriptions/            # Suscripciones por usuario
+└── subscriptions/            # Suscripciones por usuario (generadas automáticamente)
     ├── Bastián.txt
     ├── José M.txt
     ├── Macarena.txt
     └── [otros usuarios...]
 ```
+
+### Archivos Importantes vs Generados
+
+**Archivos esenciales para el repositorio:**
+- `main.py`, `requirements.txt`, `README.md`, `.gitignore`
+- Todos los archivos `__init__.py` (necesarios para importaciones)
+- Todos los archivos `.py` en las carpetas de módulos
+
+**Archivos que NO deben incluirse en Git:**
+- Carpetas `__pycache__/` (se generan automáticamente)
+- Archivos `*.pyc` (compilados de Python)
+- Carpetas `logs/` y `subscriptions/` (datos de usuario, se crean automáticamente)
 
 ## 🚀 Características Técnicas
 
