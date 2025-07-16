@@ -1,4 +1,4 @@
-# Pub/Sub App en Python (Versión Actualizada)
+# Pub/Sub App en Python
 
 Aplicación completa de publicación/suscripción (Pub/Sub) con interfaz gráfica en Tkinter que permite múltiples usuarios gestionar tópicos y mensajes de forma persistente.
 
