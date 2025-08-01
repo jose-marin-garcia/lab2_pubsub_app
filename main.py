@@ -1,3 +1,5 @@
+# main.py
+
 import tkinter as tk
 from tkinter import simpledialog
 from ui.app import PubSubApp
@@ -7,9 +9,8 @@ def ask_username():
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.withdraw()
-
+    root.withdraw()            # ocultamos la ventana inicial
     app = PubSubApp(root, ask_username)
     if app.username:
-        root.deiconify()
+        root.deiconify()       # mostramos la ventana de la app
         root.mainloop()

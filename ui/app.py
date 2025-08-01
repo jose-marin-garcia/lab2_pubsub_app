@@ -1,12 +1,15 @@
+# ui/app.py
+
 import tkinter as tk
 from tkinter import simpledialog, scrolledtext, messagebox
-from broker.broker import Broker
+from broker.rabbit_broker import RabbitBroker as Broker
 from utils.persistence import save_user_subscriptions, load_user_subscriptions
 
 class PubSubApp:
     def __init__(self, root, username_callback):
         self.root = root
         self.username_callback = username_callback
+        print("[UI] Inicializando broker...")
         self.broker = Broker()
         self.username = self.username_callback()
         self.subscribed_topics = {}
@@ -20,11 +23,10 @@ class PubSubApp:
 
     def build_ui(self):
         self.root.title(f"Pub/Sub Demo - Usuario: {self.username}")
-
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        tk.Label(self.root, text="Tópico nuevo:").grid(row=0, column=0)
+        tk.Label(self.root, text="Tópico:").grid(row=0, column=0)
         self.topic_entry = tk.Entry(self.root, width=20)
         self.topic_entry.grid(row=0, column=1)
 
@@ -67,8 +69,8 @@ class PubSubApp:
         self.logout_btn.grid(row=9, column=1, sticky="ew")
 
     def publish(self):
-        topic = self.topic_entry.get()
-        content = self.msg_entry.get()
+        topic = self.topic_entry.get().strip()
+        content = self.msg_entry.get().strip()
         if topic and content:
             message = f"{self.username}: {content}"
             self.broker.publish(topic, message)
@@ -77,29 +79,30 @@ class PubSubApp:
             messagebox.showwarning("Advertencia", "Debes ingresar un tópico y mensaje.")
 
     def subscribe(self):
-        selection = self.topic_listbox.curselection()
-        if not selection:
+        sel = self.topic_listbox.curselection()
+        if not sel:
             messagebox.showwarning("Advertencia", "Selecciona un tópico disponible.")
             return
-        topic = self.topic_listbox.get(selection)
-        filter_keyword = self.filter_entry.get() or None
+        topic = self.topic_listbox.get(sel)
+        filt = self.filter_entry.get().strip() or None
 
         def callback(msg):
             self.output_area.configure(state="normal")
             self.output_area.insert(tk.END, f"[{topic}] {msg}\n")
             self.output_area.configure(state="disabled")
 
-        self.broker.subscribe(topic, callback, filter_keyword)
+        print(f"[UI] Suscribiendo a {topic} (filtro={filt})")
+        self.broker.subscribe(topic, callback, filt)
         self.subscribed_topics[topic] = callback
         self.refresh_subscribed_list()
         self.save_subscriptions()
 
     def unsubscribe(self):
-        selection = self.subscribed_listbox.curselection()
-        if not selection:
-            messagebox.showwarning("Advertencia", "Selecciona un tópico suscrito para desuscribirte.")
+        sel = self.subscribed_listbox.curselection()
+        if not sel:
+            messagebox.showwarning("Advertencia", "Selecciona un tópico suscrito.")
             return
-        topic = self.subscribed_listbox.get(selection)
+        topic = self.subscribed_listbox.get(sel)
         callback = self.subscribed_topics.pop(topic, None)
         if callback:
             self.broker.unsubscribe(topic, callback)
@@ -111,32 +114,30 @@ class PubSubApp:
 
     def refresh_topics(self):
         self.topic_listbox.delete(0, tk.END)
-        topics = self.broker.get_topics()
-        for t in topics:
+        for t in self.broker.get_topics():
             self.topic_listbox.insert(tk.END, t)
 
     def refresh_subscribed_list(self):
         self.subscribed_listbox.delete(0, tk.END)
-        for t in self.subscribed_topics.keys():
+        for t in self.subscribed_topics:
             self.subscribed_listbox.insert(tk.END, t)
 
     def save_subscriptions(self):
         save_user_subscriptions(self.username, list(self.subscribed_topics.keys()))
 
     def restore_subscriptions(self):
-        topics = load_user_subscriptions(self.username)
-        for topic in topics:
+        for topic in load_user_subscriptions(self.username):
             if topic in self.broker.get_topics():
-                def callback_gen(t=topic):
-                    def callback(msg):
+                def gen_cb(t=topic):
+                    def cb(msg):
                         self.output_area.configure(state="normal")
                         self.output_area.insert(tk.END, f"[{t}] {msg}\n")
                         self.output_area.configure(state="disabled")
-                    return callback
-
-                callback = callback_gen()
-                self.broker.subscribe(topic, callback)
-                self.subscribed_topics[topic] = callback
+                    return cb
+                cb = gen_cb()
+                print(f"[UI] Restaurando suscripción a {topic}")
+                self.broker.subscribe(topic, cb)
+                self.subscribed_topics[topic] = cb
         self.refresh_subscribed_list()
 
     def logout(self):
@@ -150,12 +151,12 @@ class PubSubApp:
             self.root.destroy()
 
     def search_topics(self):
-        keyword = self.filter_entry.get()
-        if not keyword:
+        kw = self.filter_entry.get().strip()
+        if not kw:
             messagebox.showwarning("Advertencia", "Ingresa una palabra clave para buscar.")
             return
-
-        found_topics = self.broker.search_topics_by_keyword(keyword)
+        print(f"[UI] Buscando topics con '{kw}'")
+        found = self.broker.search_topics_by_keyword(kw)
         self.topic_listbox.delete(0, tk.END)
-        for t in found_topics:
+        for t in found:
             self.topic_listbox.insert(tk.END, t)
